@@ -2143,6 +2143,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         } else if (zone == Z_HERO) {
             Recs.Pick p = currentPick();
             if (p == null || p.pkg == null) return;
+            if (openStremio(p)) return;
             it = HomeApps.app(p.pkg, Recs.serviceName(p));
             r = heroButton;
         } else if (zone == Z_STATUS) {
@@ -2163,6 +2164,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         } else if (zone == Z_CARDS) {
             Recs.Pick p = cardIndex < cards.size() ? cards.get(cardIndex) : null;
             if (p == null || p.pkg == null) return;
+            if (openStremio(p)) return;
             it = HomeApps.app(p.pkg, Recs.serviceName(p));
             r = cardRects[cardIndex];
         } else {
@@ -2189,6 +2191,24 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         boolean opened = HomeApps.open(activity, it, this, Math.round(r.left), Math.round(r.top),
                 Math.round(r.width()), Math.round(r.height()));
         if (!opened) showToast(Ui.tr("Não deu para abrir ", "Couldn't open ") + it.label + ".");
+    }
+
+    /** A pick on Stremio opens straight on its page (by IMDb id); false = not Stremio, open the app as usual. */
+    private boolean openStremio(Recs.Pick p) {
+        if (!"stremio".equals(p.app)) return false;
+        if (p.imdb == null) return false;
+        String type = "movie".equals(p.kind) ? "movie" : "series";
+        try {
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("stremio:///detail/" + type + "/" + p.imdb));
+            i.setPackage(p.pkg);
+            i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            click.open();
+            activity.startActivity(i);
+            return true;
+        } catch (Exception e) {
+            return false;   // this Stremio doesn't take the link: just open it
+        }
     }
 
     // MARK: - Moving apps on the shelf
