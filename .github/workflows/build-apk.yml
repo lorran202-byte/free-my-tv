@@ -1,7 +1,10 @@
 name: Build APK
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -13,3 +16,9 @@ jobs:
       - run: ./build.sh
       - uses: actions/upload-artifact@v5
         with: { name: FreeMyTV-apk, path: FreeMyTV.apk }
+      - name: Publish APK to branch apk
+        run: |
+          mkdir pub && cp FreeMyTV.apk pub/ && cd pub
+          git init -q -b apk && git add FreeMyTV.apk
+          git -c user.name=bot -c user.email=bot@users.noreply.github.com commit -qm "APK"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apk
